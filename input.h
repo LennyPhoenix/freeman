@@ -5,9 +5,11 @@
 
 #define INPUT_BUFFER_SIZE (128)
 
-typedef enum {
+typedef enum InputError {
   INPUT_OK = 0,
+  /// Input failed a validity check.
   INPUT_INVALID = 1,
+  /// Input could not be read from stdin.
   INPUT_READ_ERROR = 2,
 } InputError;
 

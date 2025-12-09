@@ -6,16 +6,21 @@
 
 #define PROMPT_SIZE (64)
 
-typedef enum {
+typedef enum MenuError {
   MENU_OK = 0,
+  /// Something went wrong printing the menu.
   MENU_DISPLAY_ERROR = 1,
+  /// Something went wrong executing a menu item.
   MENU_ITEM_ERROR = 2,
+  /// User entered an invalid menu choice.
   MENU_INVALID_CHOICE = 3,
 } MenuError;
 
 /// Status of a menu item.
-typedef struct {
+typedef struct ItemStatus {
+  /// Is this menu item accessible right now?
   bool available;
+  /// Prompt to display in the menu for this item.
   char prompt[PROMPT_SIZE];
 } ItemStatus;
 
@@ -25,18 +30,25 @@ typedef ItemStatus (*StatusCheckFn)(void *menu_data);
 typedef MenuError (*MenuItemFn)(void *menu_data);
 
 /// A selectable item within a menu.
-typedef struct {
+typedef struct MenuItem {
+  /// (Optional) Function pointer to check the status of this item.
   StatusCheckFn status_check;
+  /// Function pointer to execute this item.
   MenuItemFn function;
+  /// Default prompt to display if no status check is provided.
   char *default_prompt;
 } MenuItem;
 
 /// A menu, contains any number of menu items and some arbitrary
 /// data that can be passed around.
-typedef struct {
+typedef struct Menu {
+  /// Main title, displayed at the top of the menu.
   char *title;
+  /// Shared data to pass between menu items.
   void *menu_data;
+  /// List of items in the menu.
   MenuItem *items;
+  /// Item count.
   size_t item_c;
 } Menu;
 
