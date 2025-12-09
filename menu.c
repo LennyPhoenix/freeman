@@ -40,6 +40,7 @@ MenuError open_menu(Menu *menu) {
     } else {
       // Code path is only possible if status_check was not NULL, avoiding UB
       printf("That option is unavailable right now: %s\n", status.prompt);
+      wait_for_enter();
     }
   }
 
@@ -47,7 +48,7 @@ MenuError open_menu(Menu *menu) {
 }
 
 MenuError display_menu(Menu *menu) {
-  printf("= %s =\n\n", menu->title);
+  printf("\n= %s =\n", menu->title);
 
   for (int i = 0; i < menu->item_c; i++) {
     MenuItem *item = &menu->items[i];
