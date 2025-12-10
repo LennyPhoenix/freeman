@@ -105,7 +105,7 @@ PREFERENCES_TABLE
     unsigned int days = 0;                                                     \
                                                                                \
     while (!days) {                                                            \
-      printf("[m]onthly, [w]eekly or [d]aily? ([c]ancel)\n: ");                \
+      printf("[M]onthly, [W]eekly or [D]aily? ([C]ancel)\n: ");                \
       char input = tolower(getc(stdin));                                       \
       flush_input_buffer();                                                    \
                                                                                \
@@ -132,7 +132,7 @@ PREFERENCES_TABLE
     }                                                                          \
     value /= days;                                                             \
                                                                                \
-    printf(display_name " = £%.2f/day", value);                                \
+    printf(display_name " = £%.2f/day\n", value);                              \
                                                                                \
     preferences->symbol = value;                                               \
                                                                                \

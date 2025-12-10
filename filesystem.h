@@ -8,6 +8,8 @@
 #define PROJECTS_DIRECTORY CONFIG_DIRECTORY "/projects"
 #define DEFAULT_PERMISSIONS 0755
 
+typedef char Filepath[1024];
+
 typedef enum FileError {
   FILE_OK = 0,
   /// Something went wrong trying to create a file or directory.
@@ -22,6 +24,8 @@ typedef enum FileError {
   FILE_HOME_ERROR,
   /// Error while concatinating full path.
   FILE_PATH_ERROR,
+  /// Error browsing a directory.
+  FILE_DIRECTORY_ERROR,
 } FileError;
 
 /// Ensures that the filesystem is readable, initialising it if not.
@@ -37,5 +41,19 @@ FileError fs_init_preferences(void);
 FileError fs_get_preferences(Preferences *preferences_out);
 /// Serialises preferences and writes to the preferences file.
 FileError fs_set_preferences(Preferences preferences);
+
+#include "project.h"
+
+/// Write a new project file.
+FileError fs_get_project_path(unsigned long id, char *path_out);
+/// Browses the projects directory and returns an (owned) list of all loaded
+/// projects.
+FileError fs_get_project_list(Project ***projects_out, size_t *project_c_out);
+/// Saves a project to the projects directory.
+FileError fs_save_project(Project project);
+/// Loads a specific project from the projects directory.
+FileError fs_load_project(unsigned long id, Project *project_out);
+/// Frees a project list.
+FileError fs_free_project_list(Project **projects, size_t project_c);
 
 #endif

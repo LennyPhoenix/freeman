@@ -1,6 +1,8 @@
 #include "filesystem.h"
 #include "menu.h"
+#include "project.h"
 
+#include <cyaml/cyaml.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -9,6 +11,24 @@ int main(void) {
   if (error) {
     printf("Something went wrong, file error %d\n", error);
   }
+
+  Project project = {
+      .name = "Test Project A",
+      .id = 0,
+      .activities = NULL,
+      .activity_c = 0,
+      .default_rate = 20.0,
+  };
+  fs_save_project(project);
+
+  Project **projects;
+  size_t project_c;
+  fs_get_project_list(&projects, &project_c);
+  for (int i = 0; i < project_c; i++) {
+    Project *project = projects[i];
+    printf("Found project: %s\n", project->name);
+  }
+  fs_free_project_list(projects, project_c);
 
   MenuItem pref_menu = {
       .default_prompt = "Update Preferences",
@@ -20,7 +40,7 @@ int main(void) {
   size_t item_c = sizeof(items) / sizeof(MenuItem);
 
   Menu menu = {
-      .title = "Freeman",
+      .title = "freeman",
       .menu_data = NULL,
       .items = items,
       .item_c = item_c,
