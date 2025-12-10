@@ -1,10 +1,17 @@
 #ifndef PREFERENCES_H_
 #define PREFERENCES_H_
 
+// Use X-macros here as all the logic for each preference is identical, and this
+// makes it very easy to implement logic for all preferences at once.
+#define PREFERENCES_TABLE                                                      \
+  X(rent, "Rent")                                                              \
+  X(living_costs, "Living Costs")                                              \
+  X(savings_goal, "Savings Goal")
+
 typedef struct Preferences {
-  double rent;
-  double living_costs;
-  double savings_goal;
+#define X(symbol, _disp) double symbol;
+  PREFERENCES_TABLE
+#undef X
 } Preferences;
 
 #include "menu.h"
@@ -12,13 +19,11 @@ typedef struct Preferences {
 ItemStatus preferences_status(void *_);
 MenuError preferences_menu(void *_);
 
-ItemStatus rent_status(void *_);
-MenuError update_rent(void *_);
-
-ItemStatus living_costs_status(void *_);
-MenuError update_living_costs(void *_);
-
-ItemStatus savings_goal_status(void *_);
-MenuError update_savings_goal(void *_);
+// Define menu functions for each preference
+#define X(symbol, _disp)                                                       \
+  ItemStatus symbol##_status(Preferences *preferences);                        \
+  MenuError update_##symbol(Preferences *preferences);
+PREFERENCES_TABLE
+#undef X
 
 #endif

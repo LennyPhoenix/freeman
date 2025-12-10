@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define PROMPT_SIZE (64)
+#define PROMPT_SIZE (128)
 
 typedef enum MenuError {
   MENU_OK = 0,

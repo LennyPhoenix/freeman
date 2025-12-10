@@ -54,6 +54,7 @@ MenuError display_menu(Menu *menu) {
     MenuItem *item = &menu->items[i];
 
     char prompt[PROMPT_SIZE];
+    strcpy(prompt, item->default_prompt);
 
     // 10 is a generous number of digits, just being safe
     const size_t MARKER_SIZE = 10;
@@ -62,12 +63,14 @@ MenuError display_menu(Menu *menu) {
 
     if (item->status_check) {
       ItemStatus status = item->status_check(menu->menu_data);
+
       if (!status.available) {
         sprintf(marker, "X");
       }
-      strcpy(prompt, status.prompt);
-    } else {
-      strcpy(prompt, item->default_prompt);
+
+      if (*status.prompt) {
+        strcpy(prompt, status.prompt);
+      }
     }
 
     printf("%s. %s\n", marker, prompt);

@@ -62,12 +62,13 @@ static const cyaml_config_t CYAML_CONFIG = {
 
 // Preferences
 static const cyaml_schema_field_t PREFERENCES_MAPPING_SCHEMA[] = {
-    CYAML_FIELD_FLOAT("rent", CYAML_FLAG_DEFAULT, Preferences, rent),
-    CYAML_FIELD_FLOAT("living_costs", CYAML_FLAG_DEFAULT, Preferences,
-                      living_costs),
-    CYAML_FIELD_FLOAT("savings_goal", CYAML_FLAG_DEFAULT, Preferences,
-                      savings_goal),
-    CYAML_FIELD_END,
+// Define mapping for each preference value
+#define X(symbol, _disp)                                                       \
+  CYAML_FIELD_FLOAT(#symbol, CYAML_FLAG_DEFAULT, Preferences, symbol),
+    PREFERENCES_TABLE
+#undef X
+
+        CYAML_FIELD_END,
 };
 static const cyaml_schema_value_t PREFERENCES_SCHEMA = {
     CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, Preferences,

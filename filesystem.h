@@ -28,11 +28,11 @@ typedef enum FileError {
 FileError fs_ensure(void);
 /// Expands a path relative to the home directory.
 FileError fs_expand_from_home(const char *path, char *path_out);
-/// Initialises the preferences file.
-FileError fs_init_preferences(void);
 
 #include "preferences.h"
 
+/// Initialises the preferences file.
+FileError fs_init_preferences(void);
 /// Reads and deserialises the preferences file.
 FileError fs_get_preferences(Preferences *preferences_out);
 /// Serialises preferences and writes to the preferences file.
