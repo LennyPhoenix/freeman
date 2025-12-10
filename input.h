@@ -8,9 +8,9 @@
 typedef enum InputError {
   INPUT_OK = 0,
   /// Input failed a validity check.
-  INPUT_INVALID = 1,
+  INPUT_INVALID,
   /// Input could not be read from stdin.
-  INPUT_READ_ERROR = 2,
+  INPUT_READ_ERROR,
 } InputError;
 
 void flush_input_buffer(void);

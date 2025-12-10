@@ -9,11 +9,11 @@
 typedef enum MenuError {
   MENU_OK = 0,
   /// Something went wrong printing the menu.
-  MENU_DISPLAY_ERROR = 1,
+  MENU_DISPLAY_ERROR,
   /// Something went wrong executing a menu item.
-  MENU_ITEM_ERROR = 2,
+  MENU_ITEM_ERROR,
   /// User entered an invalid menu choice.
-  MENU_INVALID_CHOICE = 3,
+  MENU_INVALID_CHOICE,
 } MenuError;
 
 /// Status of a menu item.

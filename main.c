@@ -1,3 +1,4 @@
+#include "filesystem.h"
 #include "input.h"
 #include "menu.h"
 
@@ -34,6 +35,18 @@ ItemStatus check_increment_status(int *counter) {
 }
 
 int main(void) {
+  FileError error = fs_ensure();
+  if (error) {
+    printf("Something went wrong, file error %d\n", error);
+  }
+
+  Preferences preferences;
+  fs_get_preferences(&preferences);
+  double new_rent = preferences.rent + 10.0;
+  printf("Rent was %.2f, incrementing to %.2f\n", preferences.rent, new_rent);
+  preferences.rent = new_rent;
+  fs_set_preferences(preferences);
+
   MenuItem item_1 = {
       .default_prompt = "Say Hi",
       .function = hello_world,

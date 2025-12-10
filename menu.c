@@ -85,7 +85,7 @@ MenuError get_menu_choice(size_t item_c, int *choice_out) {
   }
 
   if (choice < 1 || choice > item_c + 1) {
-      return MENU_INVALID_CHOICE;
+    return MENU_INVALID_CHOICE;
   }
 
   *choice_out = choice - 1;

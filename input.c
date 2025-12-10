@@ -1,4 +1,5 @@
 #include "input.h"
+#include "error.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,32 +12,29 @@ void flush_input_buffer(void) {
 }
 
 void wait_for_enter(void) {
-    printf("Press enter to continue...");
-    flush_input_buffer();
+  printf("Press enter to continue...");
+  flush_input_buffer();
 }
 
 InputError read_string(char *buffer) {
-    printf(": ");
+  printf(": ");
 
-    // Read user input
-    if (!fgets(buffer, INPUT_BUFFER_SIZE, stdin)) {
-        flush_input_buffer();
-        return INPUT_READ_ERROR;
-    }
+  // Read user input
+  if (!fgets(buffer, INPUT_BUFFER_SIZE, stdin)) {
+    flush_input_buffer();
+    return INPUT_READ_ERROR;
+  }
 
-    // Cut string at newline
-    buffer[strcspn(buffer, "\n")] = '\0';
+  // Cut string at newline
+  buffer[strcspn(buffer, "\n")] = '\0';
 
-    return INPUT_OK;
+  return INPUT_OK;
 }
 
 InputError read_float(double *val_out) {
   char input[INPUT_BUFFER_SIZE];
 
-  InputError string_error = read_string(input);
-  if (string_error) {
-    return string_error;
-  }
+  PROPAGATE(InputError, read_string, (input));
 
   if (validate_float_string(input)) {
     return INPUT_INVALID;
@@ -48,20 +46,17 @@ InputError read_float(double *val_out) {
 }
 
 InputError read_int(int *val_out) {
-    char input[INPUT_BUFFER_SIZE];
+  char input[INPUT_BUFFER_SIZE];
 
-    InputError string_error = read_string(input);
-    if (string_error) {
-        return string_error;
-    }
+  PROPAGATE(InputError, read_string, (input));
 
-    if (validate_int_string(input)) {
-        return INPUT_INVALID;
-    }
+  if (validate_int_string(input)) {
+    return INPUT_INVALID;
+  }
 
-    *val_out = atoi(input);
+  *val_out = atoi(input);
 
-    return INPUT_OK;
+  return INPUT_OK;
 }
 
 InputError validate_float_string(const char *input) {
@@ -104,7 +99,6 @@ InputError validate_float_string(const char *input) {
 
   return INPUT_OK;
 }
-
 
 InputError validate_int_string(const char *input) {
   if (input == NULL || *input == '\0') {
