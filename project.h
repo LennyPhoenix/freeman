@@ -31,17 +31,17 @@ typedef struct ProjectMenuItemData {
 } ProjectMenuItemData;
 
 typedef struct ProjectMenuData {
-  /// Pointer to array of project pointers.
-  Project ***projects;
-  /// Pointer to project count.
-  size_t *project_c;
+  /// Array of project pointers.
+  Project **projects;
+  /// Project count.
+  size_t project_c;
 
-  /// Pointer to menu item list.
-  MenuItem **menu_items;
-  /// Pointer to item data list.
-  ProjectMenuItemData **menu_item_data;
-  /// Pointer to item count.
-  size_t *item_c;
+  /// Menu item list.
+  MenuItem *menu_items;
+  /// Item data list.
+  ProjectMenuItemData *menu_item_data;
+  /// Item count.
+  size_t item_c;
 } ProjectMenuData;
 
 /// Loads the projects into the menu data struct.

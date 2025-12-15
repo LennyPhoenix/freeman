@@ -40,26 +40,20 @@ ItemStatus projects_status(void *_menu_data, void *_item_data) {
 }
 
 MenuError projects_menu(void *_menu_data, void *_item_data) {
-  Project **projects = NULL;
-  size_t project_c = 0;
-  size_t item_c = 0;
-  MenuItem *menu_items = NULL;
-  ProjectMenuItemData *menu_item_data = NULL;
-
   ProjectMenuData menu_data = {
-      .projects = &projects,
-      .project_c = &project_c,
-      .menu_item_data = &menu_item_data,
-      .menu_items = &menu_items,
-      .item_c = &item_c,
+      .projects = NULL,
+      .project_c = 0,
+      .menu_item_data = NULL,
+      .menu_items = NULL,
+      .item_c = 0,
   };
 
   PROPAGATE(MenuError, reload_projects, (&menu_data));
 
   Menu menu = {
       .menu_data = &menu_data,
-      .items = &menu_items,
-      .item_c = &item_c,
+      .items = &menu_data.menu_items,
+      .item_c = &menu_data.item_c,
       .title = "Manage Projects",
   };
   PROPAGATE(MenuError, open_menu, (&menu));
@@ -120,8 +114,8 @@ MenuError project_item_menu(ProjectMenuData *menu_data,
 
 MenuError add_project(ProjectMenuData *menu_data, void *_item_data) {
   unsigned long id = 0;
-  for (int i = 0; i < *menu_data->project_c; i++) {
-    Project *project = (*menu_data->projects)[i];
+  for (int i = 0; i < menu_data->project_c; i++) {
+    Project *project = menu_data->projects[i];
     unsigned long project_id = project->id;
 
     if (project_id > id) {
@@ -266,40 +260,40 @@ ItemStatus project_commit_status(Project *project,
 
 MenuError free_project_menu(ProjectMenuData *menu_data) {
   FileError error =
-      fs_free_project_list(*menu_data->projects, *menu_data->project_c);
+      fs_free_project_list(menu_data->projects, menu_data->project_c);
   if (error) {
     printf("Failed to free project list (error %d)\n", error);
     return MENU_ITEM_ERROR;
   }
-  *menu_data->projects = NULL;
-  *menu_data->project_c = 0;
+  menu_data->projects = NULL;
+  menu_data->project_c = 0;
 
-  free(*menu_data->menu_items);
-  free(*menu_data->menu_item_data);
+  free(menu_data->menu_items);
+  free(menu_data->menu_item_data);
 
   return MENU_OK;
 }
 
 MenuError reload_projects(ProjectMenuData *menu_data) {
-  if (*menu_data->projects) {
+  if (menu_data->projects) {
     PROPAGATE(MenuError, free_project_menu, (menu_data));
   }
 
   FileError error =
-      fs_get_project_list(menu_data->projects, menu_data->project_c);
+      fs_get_project_list(&menu_data->projects, &menu_data->project_c);
   if (error) {
     printf("Failed to read project list (FileError %d)\n", error);
     return MENU_ITEM_ERROR;
   }
 
-  *menu_data->item_c = *menu_data->project_c + 1;
-  *menu_data->menu_items = calloc(*menu_data->item_c, sizeof(MenuItem));
-  *menu_data->menu_item_data = calloc(*menu_data->project_c, sizeof(MenuItem));
+  menu_data->item_c = menu_data->project_c + 1;
+  menu_data->menu_items = calloc(menu_data->item_c, sizeof(MenuItem));
+  menu_data->menu_item_data = calloc(menu_data->project_c, sizeof(MenuItem));
 
-  for (int i = 0; i < *menu_data->project_c; i++) {
-    Project *project = (*menu_data->projects)[i];
-    MenuItem *menu_item = *menu_data->menu_items + i;
-    ProjectMenuItemData *item_data = *menu_data->menu_item_data + i;
+  for (int i = 0; i < menu_data->project_c; i++) {
+    Project *project = menu_data->projects[i];
+    MenuItem *menu_item = menu_data->menu_items + i;
+    ProjectMenuItemData *item_data = menu_data->menu_item_data + i;
 
     // Build Menu Item
     menu_item->item_data = item_data;
@@ -311,7 +305,7 @@ MenuError reload_projects(ProjectMenuData *menu_data) {
     item_data->index = i;
   }
 
-  MenuItem *add_project_item = *menu_data->menu_items + *menu_data->project_c;
+  MenuItem *add_project_item = menu_data->menu_items + menu_data->project_c;
   add_project_item->default_prompt = "New Project";
   add_project_item->function = (MenuItemFn)add_project;
 
