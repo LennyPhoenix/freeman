@@ -1,4 +1,5 @@
 #include "input.h"
+
 #include "error.h"
 
 #include <stdio.h>

@@ -8,6 +8,8 @@
 
 typedef enum MenuError {
   MENU_OK = 0,
+  /// Nothing went wrong, but this menu should exit.
+  MENU_EXIT,
   /// Something went wrong printing the menu.
   MENU_DISPLAY_ERROR,
   /// Something went wrong executing a menu item.
@@ -25,9 +27,9 @@ typedef struct ItemStatus {
 } ItemStatus;
 
 /// Function pointer to get the current status of a menu item.
-typedef ItemStatus (*StatusCheckFn)(void *menu_data);
+typedef ItemStatus (*StatusCheckFn)(void *menu_data, void *item_data);
 /// Function pointer to execute a menu item.
-typedef MenuError (*MenuItemFn)(void *menu_data);
+typedef MenuError (*MenuItemFn)(void *menu_data, void *item_data);
 
 /// A selectable item within a menu.
 typedef struct MenuItem {
@@ -35,6 +37,9 @@ typedef struct MenuItem {
   StatusCheckFn status_check;
   /// Function pointer to execute this item.
   MenuItemFn function;
+  /// (Optional) Data to pass to this menu item specifically. Useful when
+  /// sharing functions for multiple menu items.
+  void *item_data;
   /// Default prompt to display if no status check is provided.
   char *default_prompt;
 } MenuItem;
@@ -44,12 +49,12 @@ typedef struct MenuItem {
 typedef struct Menu {
   /// Main title, displayed at the top of the menu.
   char *title;
-  /// Shared data to pass between menu items.
+  /// (Optional) Shared data to pass between menu items.
   void *menu_data;
   /// List of items in the menu.
-  MenuItem *items;
+  MenuItem **items;
   /// Item count.
-  size_t item_c;
+  size_t *item_c;
 } Menu;
 
 /// Opens a menu.

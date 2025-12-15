@@ -1,5 +1,7 @@
 #include "menu.h"
+
 #include "input.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -12,30 +14,33 @@ MenuError open_menu(Menu *menu) {
 
     // Get user input
     int choice;
-    while (get_menu_choice(menu->item_c, &choice)) {
+    while (get_menu_choice(*menu->item_c, &choice)) {
       printf("Invalid choice\n");
     }
 
     // Exit
-    if (choice == menu->item_c) {
+    if (choice == *menu->item_c) {
       break;
     }
 
     // Get selected item
-    MenuItem *item = &menu->items[choice];
+    MenuItem *item = *menu->items + choice;
     ItemStatus status;
     bool available = true;
 
     // Check status, if applicable
     if (item->status_check) {
-      status = item->status_check(menu->menu_data);
+      status = item->status_check(menu->menu_data, item->item_data);
       available = status.available;
     }
 
     // Call if available, otherwise display an error
     if (available) {
-      if (item->function(menu->menu_data)) {
-        return MENU_ITEM_ERROR;
+      MenuError error = item->function(menu->menu_data, item->item_data);
+      if (error == MENU_EXIT) {
+        return MENU_OK;
+      } else if (error) {
+        return error;
       }
     } else {
       // Code path is only possible if status_check was not NULL, avoiding UB
@@ -50,8 +55,8 @@ MenuError open_menu(Menu *menu) {
 MenuError display_menu(Menu *menu) {
   printf("\n= %s =\n", menu->title);
 
-  for (int i = 0; i < menu->item_c; i++) {
-    MenuItem *item = &menu->items[i];
+  for (int i = 0; i < *menu->item_c; i++) {
+    MenuItem *item = *menu->items + i;
 
     char prompt[PROMPT_SIZE];
     strcpy(prompt, item->default_prompt);
@@ -62,7 +67,7 @@ MenuError display_menu(Menu *menu) {
     sprintf(marker, "%d", i + 1);
 
     if (item->status_check) {
-      ItemStatus status = item->status_check(menu->menu_data);
+      ItemStatus status = item->status_check(menu->menu_data, item->item_data);
 
       if (!status.available) {
         sprintf(marker, "X");
@@ -76,7 +81,7 @@ MenuError display_menu(Menu *menu) {
     printf("%s. %s\n", marker, prompt);
   }
 
-  printf("%zu. Exit\n", menu->item_c + 1);
+  printf("%zu. Exit\n", *menu->item_c + 1);
 
   return MENU_OK;
 }

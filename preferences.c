@@ -1,4 +1,5 @@
 #include "preferences.h"
+
 #include "date.h"
 #include "filesystem.h"
 #include "input.h"
@@ -8,7 +9,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-ItemStatus preferences_status(void *_) {
+ItemStatus preferences_status(void *_menu_data, void *_item_data) {
   ItemStatus status = {.available = true, .prompt = {0}};
 
   Preferences preferences;
@@ -42,7 +43,7 @@ ItemStatus preferences_status(void *_) {
   return status;
 }
 
-MenuError preferences_menu(void *_) {
+MenuError preferences_menu(void *_menu_data, void *_item_data) {
   Preferences preferences;
   FileError error = fs_get_preferences(&preferences);
   if (error) {
@@ -66,22 +67,22 @@ MenuError preferences_menu(void *_) {
 #undef X
   };
   size_t item_c = sizeof(items) / sizeof(MenuItem);
+  MenuItem *items_pointer = items;
 
   Menu menu = {
       .title = "Preferences",
-      .items = items,
-      .item_c = item_c,
+      .items = &items_pointer,
+      .item_c = &item_c,
       .menu_data = &preferences,
   };
 
-  open_menu(&menu);
-
-  return MENU_OK;
+  return open_menu(&menu);
 }
 
 // Define status check functions for each preference, look at LSP for expansion
 #define X(pref_symbol, display_name)                                           \
-  ItemStatus pref_symbol##_status(Preferences *preferences) {                  \
+  ItemStatus pref_symbol##_status(Preferences *preferences,                    \
+                                  void *_item_data) {                          \
     ItemStatus status = {                                                      \
         .available = true,                                                     \
         .prompt = {0},                                                         \
@@ -101,7 +102,7 @@ PREFERENCES_TABLE
 
 // Define update functions for each preference type, look at LSP for expansion
 #define X(symbol, display_name)                                                \
-  MenuError update_##symbol(Preferences *preferences) {                        \
+  MenuError update_##symbol(Preferences *preferences, void *_item_data) {      \
     unsigned int days = 0;                                                     \
                                                                                \
     while (!days) {                                                            \

@@ -1,5 +1,8 @@
 #include "filesystem.h"
 
+#include "error.h"
+#include "preferences.h"
+
 #include <cyaml/cyaml.h>
 #include <dirent.h>
 #include <stdio.h>
@@ -7,9 +10,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include "error.h"
-#include "preferences.h"
 
 FileError fs_expand_from_home(const char *path, char *path_out) {
   const char *home_dir = getenv("HOME");
@@ -251,6 +251,19 @@ FileError fs_free_project_list(Project **projects, size_t project_c) {
   }
 
   free(projects);
+
+  return FILE_OK;
+}
+
+FileError fs_delete_project(Project project) {
+  Filepath project_path;
+  PROPAGATE(FileError, fs_get_project_path, (project.id, project_path));
+
+  int error = remove(project_path);
+  if (error) {
+    printf("Failed to delete project (error %d)\n", error);
+    return FILE_DELETE_ERROR;
+  }
 
   return FILE_OK;
 }

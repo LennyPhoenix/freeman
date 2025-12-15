@@ -16,13 +16,15 @@ typedef struct Preferences {
 
 #include "menu.h"
 
-ItemStatus preferences_status(void *_);
-MenuError preferences_menu(void *_);
+/// Gets the status of the preference menu.
+ItemStatus preferences_status(void *_menu_data, void *_item_data);
+/// Opens the preference menu.
+MenuError preferences_menu(void *_menu_data, void *_item_data);
 
-// Define menu functions for each preference
+// Define menu items for each preference.
 #define X(symbol, _disp)                                                       \
-  ItemStatus symbol##_status(Preferences *preferences);                        \
-  MenuError update_##symbol(Preferences *preferences);
+  ItemStatus symbol##_status(Preferences *preferences, void *_item_data);      \
+  MenuError update_##symbol(Preferences *preferences, void *_item_data);
 PREFERENCES_TABLE
 #undef X
 

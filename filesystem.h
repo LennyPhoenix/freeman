@@ -14,6 +14,8 @@ typedef enum FileError {
   FILE_OK = 0,
   /// Something went wrong trying to create a file or directory.
   FILE_CREATE_ERROR,
+  /// Something went wrong trying to delete a file or directory.
+  FILE_DELETE_ERROR,
   /// Something went wrong saving a YAML file.
   FILE_CYAML_SAVE_ERROR,
   /// Something went wrong loading a YAML file.
@@ -51,6 +53,8 @@ FileError fs_get_project_path(unsigned long id, char *path_out);
 FileError fs_get_project_list(Project ***projects_out, size_t *project_c_out);
 /// Saves a project to the projects directory.
 FileError fs_save_project(Project project);
+/// Deletes a project.
+FileError fs_delete_project(Project project);
 /// Loads a specific project from the projects directory.
 FileError fs_load_project(unsigned long id, Project *project_out);
 /// Frees a project list.

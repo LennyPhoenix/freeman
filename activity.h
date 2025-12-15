@@ -1,6 +1,7 @@
 #ifndef ACTIVITY_H_
 #define ACTIVITY_H_
 
+#include <stdbool.h>
 #include <time.h>
 
 #define Optional(T)                                                            \
