@@ -125,11 +125,11 @@ PREFERENCES_TABLE
       }                                                                        \
     }                                                                          \
                                                                                \
-    printf("Enter value as a decimal");                                        \
+    printf("Enter value as a decimal: ");                                      \
                                                                                \
     double value;                                                              \
     while (read_float(&value)) {                                               \
-      printf("Invalid number.\n");                                             \
+      printf("Invalid number.\n: ");                                           \
     }                                                                          \
     value /= days;                                                             \
                                                                                \

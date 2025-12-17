@@ -19,7 +19,7 @@ void wait_for_enter(void);
 InputError read_int(int *val_out);
 InputError read_float(double *val_out);
 InputError read_string(char *buffer);
-InputError read_duration(int *hours_out, int *minutes_out);
+InputError read_duration(unsigned long *hours_out, unsigned long *minutes_out);
 
 InputError validate_float_string(const char *input);
 InputError validate_int_string(const char *input);

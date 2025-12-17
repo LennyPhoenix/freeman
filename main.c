@@ -1,5 +1,7 @@
+#include "activity.h"
 #include "filesystem.h"
 #include "menu.h"
+#include "preferences.h"
 #include "project.h"
 
 #include <cyaml/cyaml.h>
@@ -26,7 +28,15 @@ int main(void) {
       .function = projects_menu,
   };
 
-  MenuItem items[] = {preferences_menu_item, projects_menu_item};
+  MenuItem log_activity_item = {
+      .default_prompt = "Log Activity",
+      .item_data = NULL,
+      .status_check = new_activity_menu_status,
+      .function = new_activity_menu,
+  };
+
+  MenuItem items[] = {preferences_menu_item, projects_menu_item,
+                      log_activity_item};
   size_t item_c = sizeof(items) / sizeof(MenuItem);
   MenuItem *items_pointer = items;
 

@@ -113,16 +113,15 @@ MenuError project_item_menu(ProjectMenuData *menu_data,
 }
 
 MenuError add_project(ProjectMenuData *menu_data, void *_item_data) {
-  unsigned long id = 0;
+  unsigned long id = PROJECT_START_ID;
   for (int i = 0; i < menu_data->project_c; i++) {
     Project *project = menu_data->projects[i];
     unsigned long project_id = project->id;
 
-    if (project_id > id) {
-      id = project_id;
+    if (project_id >= id) {
+      id = project_id + 1;
     }
   }
-  id++;
 
   Project project = {
       .id = id,
@@ -168,10 +167,10 @@ MenuError add_project(ProjectMenuData *menu_data, void *_item_data) {
 }
 
 MenuError project_name(Project *project, void *_item_data) {
-  printf("Enter the project title");
+  printf("Enter the project title: ");
 
   while (read_string(project->name)) {
-    printf("Invalid input\n");
+    printf("Invalid input\n: ");
   }
 
   return MENU_OK;
@@ -191,9 +190,9 @@ ItemStatus project_name_status(Project *project, void *_item_data) {
 }
 
 MenuError project_default_rate(Project *project, void *_item_data) {
-  printf("Enter default hourly rate (£/hour) for the project");
+  printf("Enter default hourly rate (£/hour) for the project: ");
   while (read_float(&project->default_rate)) {
-    printf("Invalid input\n");
+    printf("Invalid input\n: ");
   }
   return MENU_OK;
 }

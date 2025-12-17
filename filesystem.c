@@ -140,11 +140,13 @@ static const cyaml_schema_field_t OPTIONAL_DOUBLE_MAPPING_SCHEMA[] = {
 };
 static const cyaml_schema_field_t ACTIVITY_MAPPING_SCHEMA[] = {
     CYAML_FIELD_STRING("description", CYAML_FLAG_DEFAULT, Activity, description,
-                       0),
+                       1),
     CYAML_FIELD_UINT("hours", CYAML_FLAG_DEFAULT, Activity, hours),
     CYAML_FIELD_UINT("minutes", CYAML_FLAG_DEFAULT, Activity, minutes),
-    CYAML_FIELD_MAPPING("custom_rate", CYAML_FLAG_DEFAULT, Activity,
-                        custom_rate, OPTIONAL_DOUBLE_MAPPING_SCHEMA),
+    CYAML_FIELD_MAPPING("rate", CYAML_FLAG_DEFAULT, Activity,
+                        rate, OPTIONAL_DOUBLE_MAPPING_SCHEMA),
+    CYAML_FIELD_UINT("time", CYAML_FLAG_DEFAULT, Activity, time),
+    CYAML_FIELD_UINT("project_id", CYAML_FLAG_DEFAULT, Activity, project_id),
     CYAML_FIELD_END,
 };
 static const cyaml_schema_value_t ACTIVITY_VALUE_SCHEMA = {
@@ -159,7 +161,7 @@ static const cyaml_schema_field_t PROJECT_MAPPING_SCHEMA[] = {
     CYAML_FIELD_STRING("name", CYAML_FLAG_DEFAULT, Project, name, 1),
     CYAML_FIELD_FLOAT("default_rate", CYAML_FLAG_DEFAULT, Project,
                       default_rate),
-    CYAML_FIELD_SEQUENCE_COUNT("activities", CYAML_FLAG_DEFAULT, Project,
+    CYAML_FIELD_SEQUENCE_COUNT("activities", CYAML_FLAG_POINTER, Project,
                                activities, activity_c, &ACTIVITY_VALUE_SCHEMA,
                                0, CYAML_UNLIMITED),
     CYAML_FIELD_END,
@@ -232,6 +234,33 @@ FileError fs_save_project(Project project) {
 
   if (error) {
     return FILE_CYAML_SAVE_ERROR;
+  }
+
+  return FILE_OK;
+}
+
+FileError fs_load_project(unsigned long id, Project **project_out) {
+  Filepath project_path;
+  PROPAGATE(FileError, fs_get_project_path, (id, project_path));
+
+  cyaml_err_t error =
+      cyaml_load_file(project_path, &CYAML_CONFIG, &PROJECT_VALUE_SCHEMA,
+                      (void **)project_out, 0);
+
+  if (error) {
+    return FILE_CYAML_LOAD_ERROR;
+  }
+
+  return FILE_OK;
+}
+
+FileError fs_free_project(Project *project) {
+  cyaml_err_t error =
+      cyaml_free(&CYAML_CONFIG, &PROJECT_VALUE_SCHEMA, project, 0);
+
+  if (error) {
+    printf("Error while freeing project (error %d)\n", error);
+    return FILE_CYAML_FREE_ERROR;
   }
 
   return FILE_OK;

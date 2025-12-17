@@ -89,8 +89,9 @@ MenuError display_menu(Menu *menu) {
 MenuError get_menu_choice(size_t item_c, int *choice_out) {
   int choice = 0;
 
-  while (read_int(&choice)) {
-  }
+  do {
+    printf(": ");
+  } while (read_int(&choice));
 
   if (choice < 1 || choice > item_c + 1) {
     return MENU_INVALID_CHOICE;

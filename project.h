@@ -6,6 +6,8 @@
 
 #include <stddef.h>
 
+#define PROJECT_START_ID (1000);
+
 typedef struct Project {
   /// Unique ID of the project
   unsigned long id;

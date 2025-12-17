@@ -55,8 +55,10 @@ FileError fs_get_project_list(Project ***projects_out, size_t *project_c_out);
 FileError fs_save_project(Project project);
 /// Deletes a project.
 FileError fs_delete_project(Project project);
-/// Loads a specific project from the projects directory.
-FileError fs_load_project(unsigned long id, Project *project_out);
+/// Loads a specific project from the projects directory, returning a caller-owned pointer to this project.
+FileError fs_load_project(unsigned long id, Project **project_out);
+/// Frees an individual loaded project.
+FileError fs_free_project(Project *project);
 /// Frees a project list.
 FileError fs_free_project_list(Project **projects, size_t project_c);
 

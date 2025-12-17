@@ -18,8 +18,6 @@ void wait_for_enter(void) {
 }
 
 InputError read_string(char *buffer) {
-  printf(": ");
-
   // Read user input
   if (!fgets(buffer, INPUT_BUFFER_SIZE, stdin)) {
     flush_input_buffer();
@@ -42,6 +40,49 @@ InputError read_float(double *val_out) {
   }
 
   *val_out = atof(input);
+
+  return INPUT_OK;
+}
+
+InputError read_duration(unsigned long *hours_out, unsigned long *minutes_out) {
+  char input[INPUT_BUFFER_SIZE];
+  PROPAGATE(InputError, read_string, (input));
+
+  // If HH:MM is provided, minutes will be MM and hours will be HH, if MMM is
+  // provided then hours will be MMM.
+  char *second = input;
+  char *first = strsep(&second, ":");
+
+  if (!second) {
+    char *minutes = first;
+
+    // No hours only minutes
+    if (validate_int_string(minutes)) {
+      return INPUT_INVALID;
+    }
+
+    int mins = atoi(input);
+
+    *hours_out = mins / 60;
+    *minutes_out = mins % 60;
+  } else {
+    char *hours_str = first;
+    char *minutes_str = second;
+
+    if (strlen(minutes_str) > 2 || validate_int_string(hours_str) ||
+        validate_int_string(minutes_str)) {
+      return INPUT_INVALID;
+    }
+
+    int minutes = atoi(minutes_str);
+    int hours = atoi(hours_str);
+    if (minutes >= 60) {
+      return INPUT_INVALID;
+    }
+
+    *hours_out = (unsigned long)hours;
+    *minutes_out = (unsigned long)minutes;
+  }
 
   return INPUT_OK;
 }
