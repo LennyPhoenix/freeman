@@ -14,6 +14,12 @@
 
 typedef Optional(double) OptionalDouble;
 
+typedef enum ActivityError {
+    ACTIVITY_OK = 0,
+    /// Something went wrong trying to display this activity.
+    ACTIVITY_DISPLAY_ERROR,
+} ActivityError;
+
 typedef struct Activity {
   /// Optional description for this specific activity.
   char description[256];
@@ -36,6 +42,8 @@ typedef struct Activity {
   /// The ID of the project that this activity was logged to.
   unsigned long project_id;
 } Activity;
+
+ActivityError display_activity(Activity activity);
 
 MenuError new_activity_menu(void *_menu_data, void *_item_data);
 ItemStatus new_activity_menu_status(void *_menu_data, void *_item_data);

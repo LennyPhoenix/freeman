@@ -65,6 +65,8 @@ MenuError project_commit(Project *project, ProjectMenuData *project_menu_data);
 ItemStatus project_commit_status(Project *project,
                                  ProjectMenuData *project_menu_data);
 
+MenuError project_list_activities(Project *project, void *_item_data);
+
 MenuError project_delete(Project *project, ProjectMenuData *project_menu_data);
 
 #endif

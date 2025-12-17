@@ -161,7 +161,7 @@ static const cyaml_schema_field_t PROJECT_MAPPING_SCHEMA[] = {
     CYAML_FIELD_STRING("name", CYAML_FLAG_DEFAULT, Project, name, 1),
     CYAML_FIELD_FLOAT("default_rate", CYAML_FLAG_DEFAULT, Project,
                       default_rate),
-    CYAML_FIELD_SEQUENCE_COUNT("activities", CYAML_FLAG_POINTER, Project,
+    CYAML_FIELD_SEQUENCE_COUNT("activities", CYAML_FLAG_POINTER_NULL, Project,
                                activities, activity_c, &ACTIVITY_VALUE_SCHEMA,
                                0, CYAML_UNLIMITED),
     CYAML_FIELD_END,

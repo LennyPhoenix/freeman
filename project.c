@@ -1,5 +1,6 @@
 #include "project.h"
 
+#include "activity.h"
 #include "error.h"
 #include "filesystem.h"
 #include "input.h"
@@ -9,6 +10,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 ItemStatus projects_status(void *_menu_data, void *_item_data) {
   ItemStatus status = {
@@ -82,6 +84,13 @@ MenuError project_item_menu(ProjectMenuData *menu_data,
       .status_check = (StatusCheckFn)project_default_rate_status,
   };
 
+  MenuItem list_activities_item = {
+      .item_data = NULL,
+      .function = (MenuItemFn)project_list_activities,
+      .default_prompt = "List Logged Activities",
+      .status_check = NULL,
+  };
+
   MenuItem save_item = {
       .item_data = menu_data,
       .function = (MenuItemFn)project_commit,
@@ -96,7 +105,8 @@ MenuError project_item_menu(ProjectMenuData *menu_data,
       .status_check = NULL,
   };
 
-  MenuItem items[] = {name_item, default_rate_item, save_item, delete_item};
+  MenuItem items[] = {name_item, default_rate_item, list_activities_item,
+                      save_item, delete_item};
   size_t item_c = sizeof(items) / sizeof(MenuItem);
   MenuItem *items_pointer = items;
 
@@ -307,6 +317,25 @@ MenuError reload_projects(ProjectMenuData *menu_data) {
   MenuItem *add_project_item = menu_data->menu_items + menu_data->project_c;
   add_project_item->default_prompt = "New Project";
   add_project_item->function = (MenuItemFn)add_project;
+
+  return MENU_OK;
+}
+
+MenuError project_list_activities(Project *project, void *_item_data) {
+  if (project->activity_c) {
+    for (int i = 0; i < project->activity_c; i++) {
+      Activity *activity = project->activities + i;
+      ActivityError error = display_activity(*activity);
+      if (error) {
+        printf("Failed to log activity %s (error %d)", activity->description,
+               error);
+      }
+    }
+  } else {
+    printf("No activities logged yet.\n");
+  }
+
+  wait_for_enter();
 
   return MENU_OK;
 }

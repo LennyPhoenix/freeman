@@ -1,6 +1,17 @@
 #include "date.h"
 
+#include <stdbool.h>
 #include <time.h>
+
+bool is_leap_year(struct tm *tm) {
+  struct tm t = {0};
+  t.tm_year = tm->tm_year;
+  t.tm_mon = 11; // December
+  t.tm_mday = 31;
+  mktime(&t);
+
+  return t.tm_yday == 365; // 365 means 366 days total (0-365)
+}
 
 unsigned int days_this_month(void) {
   time_t current_time = time(NULL);
@@ -19,8 +30,8 @@ unsigned int days_this_month(void) {
     break;
   case 1:
     // February, need to check for leap year
-    if (local_time->tm_yday == 364) {
-      days = 27;
+    if (is_leap_year(local_time)) {
+      days = 29;
     } else {
       days = 28;
     }

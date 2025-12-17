@@ -4,10 +4,49 @@
 #include "filesystem.h"
 #include "input.h"
 #include "menu.h"
+#include "project.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
+ActivityError display_activity(Activity activity) {
+  time_t log_time = (time_t)activity.time;
+  struct tm *current_time = localtime(&log_time);
+
+  double duration = ((double)activity.minutes / 60.0) + activity.hours;
+
+  double rate;
+  if (activity.rate.present) {
+    rate = activity.rate.value;
+  } else {
+    Project *project;
+    FileError error = fs_load_project(activity.project_id, &project);
+    if (error) {
+      printf("Failed to load project with ID %zu (error %d)\n",
+             activity.project_id, error);
+      return ACTIVITY_DISPLAY_ERROR;
+    }
+    rate = project->default_rate;
+    error = fs_free_project(project);
+    if (error) {
+      printf("Failed to free project (error %d)\n", error);
+      return ACTIVITY_DISPLAY_ERROR;
+    }
+  }
+
+  double earnings = rate * duration;
+
+  printf(
+      "%.4d-%.2d-%.2d %.2d:%.2d | Duration: %.2zu:%.2zu | Rate: £%.2f/hour | "
+      "Earnings: £%.2f | %s\n",
+      current_time->tm_year + 1900, current_time->tm_mon + 1, current_time->tm_mday,
+      current_time->tm_hour, current_time->tm_min, activity.hours,
+      activity.minutes, rate, earnings, activity.description);
+
+  return ACTIVITY_OK;
+}
 
 MenuError new_activity_menu(void *_menu_data, void *_item_data) {
   Activity activity = {0};
