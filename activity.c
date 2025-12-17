@@ -12,6 +12,14 @@
 #include <time.h>
 
 ActivityError display_activity(Activity activity) {
+  Project *project;
+  FileError error = fs_load_project(activity.project_id, &project);
+  if (error) {
+    printf("Failed to load project with ID %zu (error %d)\n",
+           activity.project_id, error);
+    return ACTIVITY_DISPLAY_ERROR;
+  }
+
   time_t log_time = (time_t)activity.time;
   struct tm *current_time = localtime(&log_time);
 
@@ -21,29 +29,24 @@ ActivityError display_activity(Activity activity) {
   if (activity.rate.present) {
     rate = activity.rate.value;
   } else {
-    Project *project;
-    FileError error = fs_load_project(activity.project_id, &project);
-    if (error) {
-      printf("Failed to load project with ID %zu (error %d)\n",
-             activity.project_id, error);
-      return ACTIVITY_DISPLAY_ERROR;
-    }
     rate = project->default_rate;
-    error = fs_free_project(project);
-    if (error) {
-      printf("Failed to free project (error %d)\n", error);
-      return ACTIVITY_DISPLAY_ERROR;
-    }
   }
 
   double earnings = rate * duration;
 
   printf(
       "%.4d-%.2d-%.2d %.2d:%.2d | Duration: %.2zu:%.2zu | Rate: £%.2f/hour | "
-      "Earnings: £%.2f | %s\n",
-      current_time->tm_year + 1900, current_time->tm_mon + 1, current_time->tm_mday,
-      current_time->tm_hour, current_time->tm_min, activity.hours,
-      activity.minutes, rate, earnings, activity.description);
+      "Earnings: £%.2f | Project: %s | %s\n",
+      current_time->tm_year + 1900, current_time->tm_mon + 1,
+      current_time->tm_mday, current_time->tm_hour, current_time->tm_min,
+      activity.hours, activity.minutes, rate, earnings, project->name,
+      activity.description);
+
+  error = fs_free_project(project);
+  if (error) {
+    printf("Failed to free project (error %d)\n", error);
+    return ACTIVITY_DISPLAY_ERROR;
+  }
 
   return ACTIVITY_OK;
 }
@@ -194,8 +197,6 @@ ItemStatus set_activity_project_status(Activity *activity, void *_item_data) {
       status.available = false;
       return status;
     }
-  } else {
-    sprintf(status.prompt, "Please assign a project");
   }
 
   return status;
