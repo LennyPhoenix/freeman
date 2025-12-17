@@ -5,7 +5,14 @@
 #include <time.h>
 
 /// Determines if the current year is a leap year.
-bool is_leap_year(struct tm *tm);
+bool is_leap_year(struct tm tm);
+
+/// Determines if two times are on the same day.
+bool is_same_day(time_t t1, time_t t2);
+/// Determines if two times are on the same week.
+bool is_same_week(time_t t1, time_t t2);
+/// Determines if two times are on the same month.
+bool is_same_month(time_t t1, time_t t2);
 
 /// Fetches the number of days in the current month.
 unsigned int days_this_month(void);

@@ -1,4 +1,5 @@
 #include "activity.h"
+#include "balance.h"
 #include "filesystem.h"
 #include "menu.h"
 #include "preferences.h"
@@ -35,8 +36,15 @@ int main(void) {
       .function = new_activity_menu,
   };
 
+  MenuItem balance_menu_item = {
+      .default_prompt = "Calculate Balance",
+      .item_data = NULL,
+      .status_check = NULL,
+      .function = balance_menu,
+  };
+
   MenuItem items[] = {preferences_menu_item, projects_menu_item,
-                      log_activity_item};
+                      log_activity_item, balance_menu_item};
   size_t item_c = sizeof(items) / sizeof(MenuItem);
   MenuItem *items_pointer = items;
 

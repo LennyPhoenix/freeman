@@ -3,9 +3,9 @@
 #include <stdbool.h>
 #include <time.h>
 
-bool is_leap_year(struct tm *tm) {
+bool is_leap_year(struct tm tm) {
   struct tm t = {0};
-  t.tm_year = tm->tm_year;
+  t.tm_year = tm.tm_year;
   t.tm_mon = 11; // December
   t.tm_mday = 31;
   mktime(&t);
@@ -15,10 +15,11 @@ bool is_leap_year(struct tm *tm) {
 
 unsigned int days_this_month(void) {
   time_t current_time = time(NULL);
-  struct tm *local_time = localtime(&current_time);
+  struct tm local_time;
+  localtime_r(&current_time, &local_time);
 
   unsigned int days;
-  switch (local_time->tm_mon) {
+  switch (local_time.tm_mon) {
   case 0:  // Jan
   case 2:  // March
   case 4:  // May
@@ -41,4 +42,18 @@ unsigned int days_this_month(void) {
   }
 
   return days;
+}
+
+bool is_same_day(time_t t1, time_t t2) {
+  struct tm tm1, tm2;
+  localtime_r(&t1, &tm1);
+  localtime_r(&t2, &tm2);
+  return tm1.tm_year == tm2.tm_year && tm1.tm_yday == tm2.tm_yday;
+}
+
+bool is_same_month(time_t t1, time_t t2) {
+  struct tm tm1, tm2;
+  localtime_r(&t1, &tm1);
+  localtime_r(&t2, &tm2);
+  return tm1.tm_year == tm2.tm_year && tm1.tm_mon == tm2.tm_mon;
 }

@@ -21,7 +21,8 @@ ActivityError display_activity(Activity activity) {
   }
 
   time_t log_time = (time_t)activity.time;
-  struct tm *current_time = localtime(&log_time);
+  struct tm activity_time;
+  localtime_r(&log_time, &activity_time);
 
   double duration = ((double)activity.minutes / 60.0) + activity.hours;
 
@@ -35,10 +36,10 @@ ActivityError display_activity(Activity activity) {
   double earnings = rate * duration;
 
   printf(
-      "%.4d-%.2d-%.2d %.2d:%.2d | Duration: %.2zu:%.2zu | Rate: £%.2f/hour | "
+      "%.4d/%.2d/%.2d %.2d:%.2d | Duration: %.2zu:%.2zu | Rate: £%.2f/hour | "
       "Earnings: £%.2f | Project: %s | %s\n",
-      current_time->tm_year + 1900, current_time->tm_mon + 1,
-      current_time->tm_mday, current_time->tm_hour, current_time->tm_min,
+      activity_time.tm_year + 1900, activity_time.tm_mon + 1,
+      activity_time.tm_mday, activity_time.tm_hour, activity_time.tm_min,
       activity.hours, activity.minutes, rate, earnings, project->name,
       activity.description);
 
@@ -335,6 +336,10 @@ MenuError save_activity(Activity *activity, void *_item_data) {
     printf("Failed to free project (error %d)\n", error);
     return MENU_ITEM_ERROR;
   }
+
+  printf("Saved activity:\n");
+  display_activity(*activity);
+  wait_for_enter();
 
   return MENU_EXIT;
 }
