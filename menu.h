@@ -33,37 +33,37 @@ typedef MenuError (*MenuItemFn)(void *menu_data, void *item_data);
 
 /// A selectable item within a menu.
 typedef struct MenuItem {
-  /// (Optional) Function pointer to check the status of this item.
-  StatusCheckFn status_check;
   /// Function pointer to execute this item.
   MenuItemFn function;
+  /// Default prompt to display if no status check is provided.
+  char *default_prompt;
+
+  /// (Optional) Function pointer to check the status of this item.
+  StatusCheckFn status_check;
   /// (Optional) Data to pass to this menu item specifically. Useful when
   /// sharing functions for multiple menu items.
   void *item_data;
-  /// Default prompt to display if no status check is provided.
-  char *default_prompt;
 } MenuItem;
 
 /// A menu, contains any number of menu items and some arbitrary
-/// data that can be passed around.
+/// data that is passed to each item function.
 typedef struct Menu {
   /// Main title, displayed at the top of the menu.
   char *title;
+  /// Pointer to array of items in the menu.
+  MenuItem **items;
+  /// Pointer to item count.
+  size_t *item_c;
+
   /// (Optional) Shared data to pass between menu items.
   void *menu_data;
-  /// List of items in the menu.
-  MenuItem **items;
-  /// Item count.
-  size_t *item_c;
 } Menu;
 
 /// Opens a menu.
 MenuError open_menu(Menu *menu);
-
 /// Prints out a menu to stdout.
 MenuError display_menu(Menu *menu);
-
-/// Reads a menu selection from stin, validating with the item count.
+/// Reads and validates a menu selection from stin.
 MenuError get_menu_choice(size_t item_c, int *choice_out);
 
 #endif

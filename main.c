@@ -10,11 +10,13 @@
 #include <string.h>
 
 int main(void) {
+  // Check that the filesystem is intact
   FileError error = fs_ensure();
   if (error) {
     printf("Something went wrong, file error %d\n", error);
   }
 
+  // Main Menu
   MenuItem preferences_menu_item = {
       .default_prompt = "Update Preferences",
       .function = preferences_menu,
@@ -54,6 +56,5 @@ int main(void) {
       .items = &items_pointer,
       .item_c = &item_c,
   };
-
   return open_menu(&menu);
 }

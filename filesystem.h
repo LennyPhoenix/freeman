@@ -3,11 +3,16 @@
 
 #include <stdlib.h>
 
+/// Config directory relative to user home.
 #define CONFIG_DIRECTORY ".config/freeman"
+/// Preferences file relative to user home.
 #define PREFERENCES_FILE CONFIG_DIRECTORY "/preferences.yaml"
+/// Projects directory relative to use home.
 #define PROJECTS_DIRECTORY CONFIG_DIRECTORY "/projects"
+/// Default permissions to use for newly created files and directories.
 #define DEFAULT_PERMISSIONS 0755
 
+/// I'm lazy.
 typedef char Filepath[1024];
 
 typedef enum FileError {
@@ -47,7 +52,7 @@ FileError fs_set_preferences(Preferences preferences);
 #include "project.h"
 
 /// Write a new project file.
-FileError fs_get_project_path(unsigned long id, char *path_out);
+FileError fs_get_project_path(ProjectId id, char *path_out);
 /// Browses the projects directory and returns an (owned) list of all loaded
 /// projects.
 FileError fs_get_project_list(Project ***projects_out, size_t *project_c_out);
@@ -56,7 +61,7 @@ FileError fs_save_project(Project project);
 /// Deletes a project.
 FileError fs_delete_project(Project project);
 /// Loads a specific project from the projects directory, returning a caller-owned pointer to this project.
-FileError fs_load_project(unsigned long id, Project **project_out);
+FileError fs_load_project(ProjectId id, Project **project_out);
 /// Frees an individual loaded project.
 FileError fs_free_project(Project *project);
 /// Frees a project list.

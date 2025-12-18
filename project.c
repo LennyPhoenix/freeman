@@ -18,6 +18,7 @@ ItemStatus projects_status(void *_menu_data, void *_item_data) {
       .prompt = {0},
   };
 
+  // Load project list
   Project **projects;
   size_t project_c;
   FileError error = fs_get_project_list(&projects, &project_c);
@@ -26,12 +27,14 @@ ItemStatus projects_status(void *_menu_data, void *_item_data) {
     return status;
   }
 
+  // Show project count if greater than 0
   if (project_c) {
     sprintf(status.prompt, "Manage Projects (%zu)", project_c);
   } else {
     sprintf(status.prompt, "Add a Project!");
   }
 
+  // Free project list
   error = fs_free_project_list(projects, project_c);
   if (error) {
     sprintf(status.prompt, "Error freeing project list (FileError %d)", error);
@@ -42,6 +45,7 @@ ItemStatus projects_status(void *_menu_data, void *_item_data) {
 }
 
 MenuError projects_menu(void *_menu_data, void *_item_data) {
+  // Store item, data and project pointers in shared struct for all menu items.
   ProjectMenuData menu_data = {
       .projects = NULL,
       .project_c = 0,
@@ -50,8 +54,10 @@ MenuError projects_menu(void *_menu_data, void *_item_data) {
       .item_c = 0,
   };
 
+  // Load projects and generate menu items
   PROPAGATE(MenuError, reload_projects, (&menu_data));
 
+  // Open menu
   Menu menu = {
       .menu_data = &menu_data,
       .items = &menu_data.menu_items,
@@ -60,6 +66,7 @@ MenuError projects_menu(void *_menu_data, void *_item_data) {
   };
   PROPAGATE(MenuError, open_menu, (&menu));
 
+  // Free items and projects
   PROPAGATE(MenuError, free_project_menu, (&menu_data));
 
   return MENU_OK;
@@ -116,17 +123,17 @@ MenuError project_item_menu(ProjectMenuData *menu_data,
       .menu_data = &project,
       .title = "Edit Project",
   };
-
   PROPAGATE(MenuError, open_menu, (&menu));
 
   return MENU_OK;
 }
 
 MenuError add_project(ProjectMenuData *menu_data, void *_item_data) {
-  unsigned long id = PROJECT_START_ID;
+  // Find next unused ID for new project
+  ProjectId id = PROJECT_START_ID;
   for (int i = 0; i < menu_data->project_c; i++) {
     Project *project = menu_data->projects[i];
-    unsigned long project_id = project->id;
+    ProjectId project_id = project->id;
 
     if (project_id >= id) {
       id = project_id + 1;
@@ -201,9 +208,11 @@ ItemStatus project_name_status(Project *project, void *_item_data) {
 
 MenuError project_default_rate(Project *project, void *_item_data) {
   printf("Enter default hourly rate (£/hour) for the project: ");
-  while (read_float(&project->default_rate)) {
+
+  while (read_double(&project->default_rate)) {
     printf("Invalid input\n: ");
   }
+
   return MENU_OK;
 }
 
@@ -220,12 +229,14 @@ ItemStatus project_default_rate_status(Project *project, void *_item_data) {
 MenuError project_commit(Project *project, ProjectMenuData *project_menu_data) {
   FileError error = fs_save_project(*project);
 
+  // Reload all projects and menu items after saving
   PROPAGATE(MenuError, reload_projects, (project_menu_data));
 
   return MENU_EXIT;
 }
 
 MenuError project_delete(Project *project, ProjectMenuData *project_menu_data) {
+  // Check for confirmation from the user
   printf("Are you sure you want to delete this project? All activities "
          "associated will be erased.\n");
 
@@ -235,6 +246,7 @@ MenuError project_delete(Project *project, ProjectMenuData *project_menu_data) {
     char input = tolower(getc(stdin));
     flush_input_buffer();
 
+    // Wait for explicit Y or N
     switch (input) {
     case 'y':
       loop = false;
@@ -248,6 +260,7 @@ MenuError project_delete(Project *project, ProjectMenuData *project_menu_data) {
 
   FileError error = fs_delete_project(*project);
 
+  // Reload projects and items after modifying filesystem
   PROPAGATE(MenuError, reload_projects, (project_menu_data));
 
   return MENU_EXIT;
@@ -257,6 +270,7 @@ ItemStatus project_commit_status(Project *project,
                                  ProjectMenuData *project_menu_data) {
   ItemStatus status = {0};
 
+  // Only allow saving if a project name is assigned
   if (*project->name) {
     status.available = true;
   } else {
@@ -268,15 +282,18 @@ ItemStatus project_commit_status(Project *project,
 }
 
 MenuError free_project_menu(ProjectMenuData *menu_data) {
+  // Free underlying project list
   FileError error =
       fs_free_project_list(menu_data->projects, menu_data->project_c);
   if (error) {
     printf("Failed to free project list (error %d)\n", error);
     return MENU_ITEM_ERROR;
   }
+  // Reset count to 0 and list pointer to NULL
   menu_data->projects = NULL;
   menu_data->project_c = 0;
 
+  // Free item and data arrays
   free(menu_data->menu_items);
   free(menu_data->menu_item_data);
 
@@ -284,10 +301,12 @@ MenuError free_project_menu(ProjectMenuData *menu_data) {
 }
 
 MenuError reload_projects(ProjectMenuData *menu_data) {
+  // If already loaded, then free project list and item arrays
   if (menu_data->projects) {
     PROPAGATE(MenuError, free_project_menu, (menu_data));
   }
 
+  // Load new project list
   FileError error =
       fs_get_project_list(&menu_data->projects, &menu_data->project_c);
   if (error) {
@@ -295,10 +314,12 @@ MenuError reload_projects(ProjectMenuData *menu_data) {
     return MENU_ITEM_ERROR;
   }
 
+  // Allocate menu item arrays
   menu_data->item_c = menu_data->project_c + 1;
   menu_data->menu_items = calloc(menu_data->item_c, sizeof(MenuItem));
   menu_data->menu_item_data = calloc(menu_data->project_c, sizeof(MenuItem));
 
+  // Build menu items for each project
   for (int i = 0; i < menu_data->project_c; i++) {
     Project *project = menu_data->projects[i];
     MenuItem *menu_item = menu_data->menu_items + i;
@@ -314,6 +335,7 @@ MenuError reload_projects(ProjectMenuData *menu_data) {
     item_data->index = i;
   }
 
+  // Add additional menu item for creating a new project
   MenuItem *add_project_item = menu_data->menu_items + menu_data->project_c;
   add_project_item->default_prompt = "New Project";
   add_project_item->function = (MenuItemFn)add_project;
@@ -322,6 +344,7 @@ MenuError reload_projects(ProjectMenuData *menu_data) {
 }
 
 MenuError project_list_activities(Project *project, void *_item_data) {
+  // Iterate over activities (if applicable) and display each one
   if (project->activity_c) {
     for (int i = 0; i < project->activity_c; i++) {
       Activity *activity = project->activities + i;

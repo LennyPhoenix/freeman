@@ -12,6 +12,7 @@
 #include <time.h>
 
 ActivityError display_activity(Activity activity) {
+  // Load activity project.
   Project *project;
   FileError error = fs_load_project(activity.project_id, &project);
   if (error) {
@@ -20,21 +21,26 @@ ActivityError display_activity(Activity activity) {
     return ACTIVITY_DISPLAY_ERROR;
   }
 
+  // Retrieve activity time information
   time_t log_time = (time_t)activity.time;
   struct tm activity_time;
   localtime_r(&log_time, &activity_time);
 
+  // Calculate activity duration
   double duration = ((double)activity.minutes / 60.0) + activity.hours;
 
+  // Calculate activity rate
   double rate;
-  if (activity.rate.present) {
+  if (activity.rate.present) { // use custom rate if applicable
     rate = activity.rate.value;
   } else {
     rate = project->default_rate;
   }
 
+  // Calculate earnings
   double earnings = rate * duration;
 
+  // Display activity to screen
   printf(
       "%.4d/%.2d/%.2d %.2d:%.2d | Duration: %.2zu:%.2zu | Rate: £%.2f/hour | "
       "Earnings: £%.2f | Project: %s | %s\n",
@@ -43,6 +49,7 @@ ActivityError display_activity(Activity activity) {
       activity.hours, activity.minutes, rate, earnings, project->name,
       activity.description);
 
+  // Free loaded project
   error = fs_free_project(project);
   if (error) {
     printf("Failed to free project (error %d)\n", error);
@@ -106,9 +113,9 @@ MenuError new_activity_menu(void *_menu_data, void *_item_data) {
 ItemStatus new_activity_menu_status(void *_menu_data, void *_item_data) {
   ItemStatus status = {0};
 
+  // Load project list
   Project **projects;
   size_t project_c;
-
   FileError error = fs_get_project_list(&projects, &project_c);
   if (error) {
     sprintf(status.prompt, "Failed to load project list (error %d)", error);
@@ -123,6 +130,7 @@ ItemStatus new_activity_menu_status(void *_menu_data, void *_item_data) {
             "Must create a project before logging activities, see above!");
   }
 
+  // Free project list
   error = fs_free_project_list(projects, project_c);
   if (error) {
     sprintf(status.prompt, "Failed to free project list (error %d)", error);
@@ -139,6 +147,7 @@ MenuError assign_activity_project_id(Activity *activity, Project *project) {
 }
 
 MenuError set_activity_project(Activity *activity, void *_item_data) {
+  // Load project list
   Project **projects;
   size_t project_c;
   FileError error = fs_get_project_list(&projects, &project_c);
@@ -147,8 +156,10 @@ MenuError set_activity_project(Activity *activity, void *_item_data) {
     return MENU_ITEM_ERROR;
   }
 
+  // Allocate dynamic array for menu items
   MenuItem *items = calloc(project_c, sizeof(MenuItem));
 
+  // Construct menu item for each project
   for (int i = 0; i < project_c; i++) {
     MenuItem *item = items + i;
     Project *project = projects[i];
@@ -158,15 +169,16 @@ MenuError set_activity_project(Activity *activity, void *_item_data) {
     item->default_prompt = project->name;
   }
 
+  // Open project ID menu
   Menu menu = {
       .title = "Select Project for Activity",
       .item_c = &project_c,
       .items = &items,
       .menu_data = activity,
   };
-
   PROPAGATE(MenuError, open_menu, (&menu));
 
+  // Free project list
   error = fs_free_project_list(projects, project_c);
   if (error) {
     printf("Failed to free project list (error %d)\n", error);
@@ -182,7 +194,9 @@ ItemStatus set_activity_project_status(Activity *activity, void *_item_data) {
       .prompt = {0},
   };
 
+  // Only update prompt if project ID is assigned
   if (activity->project_id) {
+    // Load project
     Project *project;
     FileError error = fs_load_project(activity->project_id, &project);
     if (error) {
@@ -190,8 +204,10 @@ ItemStatus set_activity_project_status(Activity *activity, void *_item_data) {
       return status;
     }
 
+    // Use project name in prompt
     sprintf(status.prompt, "Update Project (%s)", project->name);
 
+    // Free project
     error = fs_free_project(project);
     if (error) {
       sprintf(status.prompt, "Failed to free project\n");
@@ -243,6 +259,7 @@ ItemStatus set_activity_duration_status(Activity *activity, void *_item_data) {
       .prompt = "Set Duration",
   };
 
+  // Display current duration if applicable
   if (activity->hours || activity->minutes) {
     sprintf(status.prompt, "Update Duration (%zu:%.2zu)", activity->hours,
             activity->minutes);
@@ -256,20 +273,26 @@ MenuError set_activity_custom_rate(Activity *activity, void *_item_data) {
       "Enter a custom rate (£/hour) for this activity, or [r]eset to project "
       "default\n: ");
 
+  // Hack to get single character before read_double consumes the whole input
+  // buffer
   char c = getc(stdin);
   if (tolower(c) == 'r') {
+    // Only if 'r' was the first character entered, unset the custom rate for
+    // this activity and skip float reading.
     flush_input_buffer();
     memset(&activity->rate, 0, sizeof(OptionalDouble));
     printf("Clearing custom rate for this activity...\n");
     return MENU_OK;
   } else {
+    // Push this character back to stdin
     ungetc(c, stdin);
   }
 
-  if (read_float(&activity->rate.value)) {
+  if (read_double(&activity->rate.value)) {
     printf("Invalid input\n: ");
   }
 
+  // Set rate as "Some"
   activity->rate.present = true;
 
   return MENU_OK;
@@ -286,6 +309,8 @@ ItemStatus set_activity_custom_rate_status(Activity *activity,
     sprintf(status.prompt, "Update/clear custom rate (£%.2f/hour)",
             activity->rate.value);
   } else if (activity->project_id) {
+    // If project ID is set and custom rate is not assigned (i.e.
+    // `!rate.present`), load project and display default rate.
     Project *project;
     FileError error = fs_load_project(activity->project_id, &project);
     if (error) {
@@ -296,12 +321,19 @@ ItemStatus set_activity_custom_rate_status(Activity *activity,
 
     sprintf(status.prompt, "Set custom rate? (Project default: £%.2f/hour)",
             project->default_rate);
+
+    error = fs_free_project(project);
+    if (error) {
+      sprintf(status.prompt, "Failed to free project (error %d)", error);
+      status.available = false;
+    }
   }
 
   return status;
 }
 
 MenuError save_activity(Activity *activity, void *_item_data) {
+  // Load activity project
   Project *project;
   FileError error = fs_load_project(activity->project_id, &project);
   if (error) {
@@ -310,18 +342,23 @@ MenuError save_activity(Activity *activity, void *_item_data) {
     return MENU_ITEM_ERROR;
   }
 
+  // Assign project's default rate to activity if not already set
   if (!activity->rate.present) {
     activity->rate.value = project->default_rate;
     activity->rate.present = true;
   }
+  // Assign current timestamp
   activity->time = (unsigned long)time(NULL);
 
+  // Increase activities array size by 1
   project->activity_c++;
   project->activities =
       realloc(project->activities, sizeof(Activity) * project->activity_c);
+  // Copy activity to project activities array
   memcpy(project->activities + project->activity_c - 1, activity,
          sizeof(Activity));
 
+  // Save project (and thus activity) to filesystem
   error = fs_save_project(*project);
   if (error) {
     printf("Failed to save project %s, ID %zu (error %d)\n", project->name,
@@ -331,6 +368,7 @@ MenuError save_activity(Activity *activity, void *_item_data) {
     return MENU_ITEM_ERROR;
   }
 
+  // Free loaded project
   error = fs_free_project(project);
   if (error) {
     printf("Failed to free project (error %d)\n", error);
@@ -347,6 +385,7 @@ MenuError save_activity(Activity *activity, void *_item_data) {
 ItemStatus save_activity_status(Activity *activity, void *_item_data) {
   ItemStatus status = {.available = true, .prompt = {0}};
 
+  // Only allow saving if project ID, duration, and description are all set.
   if (!activity->project_id) {
     sprintf(status.prompt, "Must set project before saving, see above!");
     status.available = false;
@@ -357,11 +396,13 @@ ItemStatus save_activity_status(Activity *activity, void *_item_data) {
     sprintf(status.prompt, "Must set description before saving, see above!");
     status.available = false;
   } else {
+    // Display earnings for activity if possible
     double duration = ((double)activity->minutes / 60.0) + activity->hours;
     double earnings;
     if (activity->rate.present) {
       earnings = activity->rate.value * duration;
     } else {
+      // Load and use project's default rate if not assigned on activity
       Project *project;
       FileError error = fs_load_project(activity->project_id, &project);
       if (error) {

@@ -38,8 +38,10 @@ MenuError open_menu(Menu *menu) {
     if (available) {
       MenuError error = item->function(menu->menu_data, item->item_data);
       if (error == MENU_EXIT) {
+        // Quit menu automatically if `MENU_EXIT` signal received by item
         return MENU_OK;
       } else if (error) {
+        // Propagate all errors
         return error;
       }
     } else {
@@ -53,8 +55,10 @@ MenuError open_menu(Menu *menu) {
 }
 
 MenuError display_menu(Menu *menu) {
+  // Menu title
   printf("\n= %s =\n", menu->title);
 
+  // Print each menu item
   for (int i = 0; i < *menu->item_c; i++) {
     MenuItem *item = *menu->items + i;
 
@@ -62,18 +66,20 @@ MenuError display_menu(Menu *menu) {
     strcpy(prompt, item->default_prompt);
 
     // 10 is a generous number of digits, just being safe
-    const size_t MARKER_SIZE = 10;
-    char marker[MARKER_SIZE];
+    char marker[10];
     sprintf(marker, "%d", i + 1);
 
     if (item->status_check) {
+      // Call status check if applicable
       ItemStatus status = item->status_check(menu->menu_data, item->item_data);
 
       if (!status.available) {
+        // Change marker if item is unavailable
         sprintf(marker, "X");
       }
 
       if (*status.prompt) {
+        // Use custom prompt if provided by status check function
         strcpy(prompt, status.prompt);
       }
     }
@@ -81,6 +87,7 @@ MenuError display_menu(Menu *menu) {
     printf("%s. %s\n", marker, prompt);
   }
 
+  // Exit entry
   printf("%zu. Exit\n", *menu->item_c + 1);
 
   return MENU_OK;
@@ -89,14 +96,17 @@ MenuError display_menu(Menu *menu) {
 MenuError get_menu_choice(size_t item_c, int *choice_out) {
   int choice = 0;
 
+  // Read until valid integer is received
   do {
     printf(": ");
   } while (read_int(&choice));
 
+  // Bounds checks
   if (choice < 1 || choice > item_c + 1) {
     return MENU_INVALID_CHOICE;
   }
 
+  // Offset to item index
   *choice_out = choice - 1;
 
   return MENU_OK;

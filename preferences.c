@@ -10,8 +10,10 @@
 #include <stdio.h>
 
 ItemStatus preferences_status(void *_menu_data, void *_item_data) {
+  // Default to available
   ItemStatus status = {.available = true, .prompt = {0}};
 
+  // Get existing preferences
   Preferences preferences;
   FileError error = fs_get_preferences(&preferences);
   if (error) {
@@ -23,7 +25,8 @@ ItemStatus preferences_status(void *_menu_data, void *_item_data) {
     return status;
   }
 
-  // List all unassigned preferences
+  // List all unassigned preferences, using X macro tables to generate code for
+  // each item
   char missing[64] = {0};
 #define X(symbol, display_name)                                                \
   if (!preferences.symbol) {                                                   \
@@ -36,6 +39,7 @@ ItemStatus preferences_status(void *_menu_data, void *_item_data) {
   PREFERENCES_TABLE
 #undef X
 
+  // Display any missing preferences to main menu
   if (*missing) {
     sprintf(status.prompt, "Update Preferences (Missing: %s)", missing);
   }
@@ -44,13 +48,14 @@ ItemStatus preferences_status(void *_menu_data, void *_item_data) {
 }
 
 MenuError preferences_menu(void *_menu_data, void *_item_data) {
+  // Load preferences
   Preferences preferences;
   FileError error = fs_get_preferences(&preferences);
   if (error) {
     return MENU_ITEM_ERROR;
   }
 
-  // Generate menu item automatically for each preference
+  // Generate menu item automatically for each preference (more X macro tables!)
 #define X(symbol, display)                                                     \
   MenuItem symbol = {                                                          \
       .default_prompt = "Set " display,                                        \
@@ -128,7 +133,7 @@ PREFERENCES_TABLE
     printf("Enter value as a decimal: ");                                      \
                                                                                \
     double value;                                                              \
-    while (read_float(&value)) {                                               \
+    while (read_double(&value)) {                                              \
       printf("Invalid number.\n: ");                                           \
     }                                                                          \
     value /= days;                                                             \

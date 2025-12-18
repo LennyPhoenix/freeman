@@ -8,6 +8,7 @@
   X(living_costs, "Living Costs")                                              \
   X(savings_goal, "Savings Goal")
 
+/// Preferences struct, stores the user's daily expenses.
 typedef struct Preferences {
 #define X(symbol, _disp) double symbol;
   PREFERENCES_TABLE

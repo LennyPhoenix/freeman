@@ -8,13 +8,15 @@
 
 void flush_input_buffer(void) {
   int ch;
-  while ((ch = getchar()) != '\n' && ch != EOF) { /* discard */
+  // Read until end of buffer or newline, discarding all input
+  while ((ch = getchar()) != '\n' && ch != EOF) {
   }
 }
 
 void wait_for_enter(void) {
   printf("Press enter to continue...");
-  flush_input_buffer();
+  flush_input_buffer(); // This works cos getchar waits until enter is hit on
+                        // linux (input buffer needs to be flushed)
 }
 
 InputError read_string(char *buffer) {
@@ -30,9 +32,8 @@ InputError read_string(char *buffer) {
   return INPUT_OK;
 }
 
-InputError read_float(double *val_out) {
+InputError read_double(double *val_out) {
   char input[INPUT_BUFFER_SIZE];
-
   PROPAGATE(InputError, read_string, (input));
 
   if (validate_float_string(input)) {
@@ -63,20 +64,20 @@ InputError read_duration(unsigned long *hours_out, unsigned long *minutes_out) {
 
     int mins = atoi(input);
 
-    *hours_out = mins / 60;
-    *minutes_out = mins % 60;
+    *hours_out = (unsigned long)mins / 60;
+    *minutes_out = (unsigned long)mins % 60;
   } else {
     char *hours_str = first;
     char *minutes_str = second;
 
-    if (strlen(minutes_str) > 2 || validate_int_string(hours_str) ||
+    if (validate_int_string(hours_str) ||
         validate_int_string(minutes_str)) {
       return INPUT_INVALID;
     }
 
     int minutes = atoi(minutes_str);
     int hours = atoi(hours_str);
-    if (minutes >= 60) {
+    if (minutes >= 60) { // 1:70 doesn't make sense as a time
       return INPUT_INVALID;
     }
 
@@ -89,7 +90,6 @@ InputError read_duration(unsigned long *hours_out, unsigned long *minutes_out) {
 
 InputError read_int(int *val_out) {
   char input[INPUT_BUFFER_SIZE];
-
   PROPAGATE(InputError, read_string, (input));
 
   if (validate_int_string(input)) {
@@ -105,6 +105,8 @@ InputError validate_float_string(const char *input) {
   if (input == NULL || *input == '\0') { // check if empty
     return INPUT_INVALID;
   }
+  
+  // Full regex: (\+|\-)?(0-9)+(\.(0-9)*)?
 
   // Optional sign
   if (*input == '+' || *input == '-') {
@@ -116,7 +118,8 @@ InputError validate_float_string(const char *input) {
     return INPUT_INVALID;
   }
 
-  // (0-9)+(\.(0-9)*)?
+
+  // (0-9)+.?
   while (*input != '.') {
     if (*input == '\0') {
       return INPUT_OK;
@@ -131,6 +134,7 @@ InputError validate_float_string(const char *input) {
 
   input++;
 
+  // (0-9)*
   while (*input != '\0') {
     if (*input < '0' || *input > '9') {
       return INPUT_INVALID;
@@ -146,6 +150,8 @@ InputError validate_int_string(const char *input) {
   if (input == NULL || *input == '\0') {
     return INPUT_INVALID;
   }
+
+  // (\-|\+)?(0-9)+
 
   // Optional sign
   if (*input == '+' || *input == '-') {

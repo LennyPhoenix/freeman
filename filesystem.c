@@ -12,8 +12,10 @@
 #include <unistd.h>
 
 FileError fs_expand_from_home(const char *path, char *path_out) {
+  // Get home directory
   const char *home_dir = getenv("HOME");
 
+  // Concat with passed path
   if (home_dir) {
     if (!sprintf(path_out, "%s/%s", home_dir, path)) {
       return FILE_PATH_ERROR;
@@ -26,6 +28,7 @@ FileError fs_expand_from_home(const char *path, char *path_out) {
 }
 
 FileError fs_ensure(void) {
+  // Check config directory
   Filepath config_dir;
   PROPAGATE(FileError, fs_expand_from_home, (CONFIG_DIRECTORY, config_dir));
   if (access(config_dir, F_OK)) {
@@ -35,6 +38,7 @@ FileError fs_ensure(void) {
     }
   }
 
+  // Check for preferences file
   Filepath preferences_file;
   PROPAGATE(FileError, fs_expand_from_home,
             (PREFERENCES_FILE, preferences_file));
@@ -43,6 +47,7 @@ FileError fs_ensure(void) {
     PROPAGATE(FileError, fs_init_preferences, ());
   }
 
+  // Check for projects directory
   Filepath projects_dir;
   PROPAGATE(FileError, fs_expand_from_home, (PROJECTS_DIRECTORY, projects_dir));
   if (access(projects_dir, F_OK)) {
@@ -55,15 +60,16 @@ FileError fs_ensure(void) {
   return FILE_OK;
 }
 
-// CYAML
+// CYAML (default config)
 static const cyaml_config_t CYAML_CONFIG = {
     .log_fn = cyaml_log,
     .mem_fn = cyaml_mem,
     .log_level = CYAML_LOG_WARNING,
 };
 
-// Preferences
+// Preferences YAML schema, generated with X macro tables
 static const cyaml_schema_field_t PREFERENCES_MAPPING_SCHEMA[] = {
+// Everything is a double which makes this easy
 #define X(symbol, _disp)                                                       \
   CYAML_FIELD_FLOAT(#symbol, CYAML_FLAG_DEFAULT, Preferences, symbol),
     PREFERENCES_TABLE
@@ -86,6 +92,7 @@ FileError fs_init_preferences(void) {
       .savings_goal = 0,
   };
 
+  // Save default preferences
   PROPAGATE(FileError, fs_set_preferences, (DEFAULT_PREFERENCES));
 
   return FILE_OK;
@@ -98,7 +105,6 @@ FileError fs_set_preferences(Preferences preferences) {
 
   cyaml_err_t error = cyaml_save_file(preferences_file, &CYAML_CONFIG,
                                       &PREFERENCES_SCHEMA, &preferences, 0);
-
   if (error) {
     return FILE_CYAML_SAVE_ERROR;
   }
@@ -111,17 +117,19 @@ FileError fs_get_preferences(Preferences *preferences_out) {
   PROPAGATE(FileError, fs_expand_from_home,
             (PREFERENCES_FILE, preferences_file));
 
+  // Load preferences file (cyaml allocated)
   Preferences *loaded_preferences;
   cyaml_err_t error =
       cyaml_load_file(preferences_file, &CYAML_CONFIG, &PREFERENCES_SCHEMA,
                       (void **)&loaded_preferences, NULL);
-
   if (error) {
     return FILE_CYAML_LOAD_ERROR;
   }
 
+  // Copy cyaml allocated preferences to caller-owned struct
   memcpy(preferences_out, loaded_preferences, sizeof(Preferences));
 
+  // Free cyaml allocated preferences
   error = cyaml_free(&CYAML_CONFIG, &PREFERENCES_SCHEMA, loaded_preferences, 0);
   if (error) {
     return FILE_CYAML_FREE_ERROR;
@@ -130,7 +138,7 @@ FileError fs_get_preferences(Preferences *preferences_out) {
   return FILE_OK;
 }
 
-// Activity
+// Activity YAML Schema
 #include "activity.h"
 
 static const cyaml_schema_field_t OPTIONAL_DOUBLE_MAPPING_SCHEMA[] = {
@@ -143,8 +151,8 @@ static const cyaml_schema_field_t ACTIVITY_MAPPING_SCHEMA[] = {
                        1),
     CYAML_FIELD_UINT("hours", CYAML_FLAG_DEFAULT, Activity, hours),
     CYAML_FIELD_UINT("minutes", CYAML_FLAG_DEFAULT, Activity, minutes),
-    CYAML_FIELD_MAPPING("rate", CYAML_FLAG_DEFAULT, Activity,
-                        rate, OPTIONAL_DOUBLE_MAPPING_SCHEMA),
+    CYAML_FIELD_MAPPING("rate", CYAML_FLAG_DEFAULT, Activity, rate,
+                        OPTIONAL_DOUBLE_MAPPING_SCHEMA),
     CYAML_FIELD_UINT("time", CYAML_FLAG_DEFAULT, Activity, time),
     CYAML_FIELD_UINT("project_id", CYAML_FLAG_DEFAULT, Activity, project_id),
     CYAML_FIELD_END,
@@ -153,7 +161,7 @@ static const cyaml_schema_value_t ACTIVITY_VALUE_SCHEMA = {
     CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, Activity, ACTIVITY_MAPPING_SCHEMA),
 };
 
-// Project
+// Project YAML Schema
 #include "project.h"
 
 static const cyaml_schema_field_t PROJECT_MAPPING_SCHEMA[] = {
@@ -173,6 +181,7 @@ static const cyaml_schema_value_t PROJECT_VALUE_SCHEMA = {
 FileError fs_get_project_path(unsigned long id, char *path_out) {
   PROPAGATE(FileError, fs_expand_from_home, (PROJECTS_DIRECTORY, path_out));
 
+  // {project_dir}/{id}.yaml
   if (!sprintf(path_out, "%s/%zu.yaml", path_out, id)) {
     return FILE_PATH_ERROR;
   }
@@ -184,22 +193,25 @@ FileError fs_get_project_list(Project ***projects_out, size_t *project_c_out) {
   Filepath project_dir;
   PROPAGATE(FileError, fs_expand_from_home, (PROJECTS_DIRECTORY, project_dir));
 
+  // Open project directory for browsing
   DIR *directory = opendir(project_dir);
-
   if (!directory) {
     return FILE_DIRECTORY_ERROR;
   }
 
+  // Init projects array
   Project **projects = NULL;
   size_t project_c = 0;
 
+  // Iterate over each entry in projects directory
   struct dirent *entry;
   Filepath project_path;
   while ((entry = readdir(directory))) {
-    if (entry->d_type == DT_REG) {
+    if (entry->d_type == DT_REG) { // Only look for normal files
+      // Get absolute path
       sprintf(project_path, "%s/%s", project_dir, entry->d_name);
 
-      // Resize
+      // Resize array
       project_c++;
       projects = realloc(projects, sizeof(Project *) * project_c);
 
@@ -207,18 +219,20 @@ FileError fs_get_project_list(Project ***projects_out, size_t *project_c_out) {
       cyaml_err_t error =
           cyaml_load_file(project_path, &CYAML_CONFIG, &PROJECT_VALUE_SCHEMA,
                           (void **)projects + project_c - 1, NULL);
-
       if (error) {
-        project_c--;
+        project_c--; // Don't necessarily have to reallocate as long as the
+                     // counter is kept up-to-date
         printf("Failed to load project %s (error %d)\n", project_path, error);
       }
     }
   }
 
+  // Close directory
   if (closedir(directory)) {
     return FILE_DIRECTORY_ERROR;
   }
 
+  // Return project list and count
   *projects_out = projects;
   *project_c_out = project_c;
 
@@ -243,6 +257,7 @@ FileError fs_load_project(unsigned long id, Project **project_out) {
   Filepath project_path;
   PROPAGATE(FileError, fs_get_project_path, (id, project_path));
 
+  // Load project and return to calling function (cyaml allocated, caller owned)
   cyaml_err_t error =
       cyaml_load_file(project_path, &CYAML_CONFIG, &PROJECT_VALUE_SCHEMA,
                       (void **)project_out, 0);
@@ -267,11 +282,12 @@ FileError fs_free_project(Project *project) {
 }
 
 FileError fs_free_project_list(Project **projects, size_t project_c) {
+  // Free each project indiviually according to YAML schema
   for (int i = 0; i < project_c; i++) {
     Project *project = projects[i];
+
     cyaml_err_t error =
         cyaml_free(&CYAML_CONFIG, &PROJECT_VALUE_SCHEMA, project, 0);
-
     if (error) {
       printf("Error while freeing project %d of %zu...\n", i + 1,
              project_c + 1);
@@ -279,6 +295,7 @@ FileError fs_free_project_list(Project **projects, size_t project_c) {
     }
   }
 
+  // Free project pointer array
   free(projects);
 
   return FILE_OK;
@@ -288,6 +305,7 @@ FileError fs_delete_project(Project project) {
   Filepath project_path;
   PROPAGATE(FileError, fs_get_project_path, (project.id, project_path));
 
+  // Erase file
   int error = remove(project_path);
   if (error) {
     printf("Failed to delete project (error %d)\n", error);
