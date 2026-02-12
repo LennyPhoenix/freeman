@@ -346,6 +346,9 @@ MenuError reload_projects(ProjectMenuData *menu_data) {
 MenuError project_list_activities(Project *project, void *_item_data) {
   // Iterate over activities (if applicable) and display each one
   if (project->activity_c) {
+    int total_minutes = 0;
+    double total_earnings = 0.0;
+
     for (int i = 0; i < project->activity_c; i++) {
       Activity *activity = project->activities + i;
       ActivityError error = display_activity(*activity);
@@ -353,7 +356,22 @@ MenuError project_list_activities(Project *project, void *_item_data) {
         printf("Failed to log activity %s (error %d)", activity->description,
                error);
       }
+
+      double minutes = activity->hours * 60 + activity->minutes;
+      total_minutes += minutes;
+      double rate;
+      if (activity->rate.present) {
+        rate = activity->rate.value;
+      } else {
+        rate = project->default_rate;
+      }
+      total_earnings += rate * (double)minutes / 60.0;
     }
+
+    int hours = total_minutes / 60;
+    int minutes = total_minutes % 60;
+    printf("Total duration: %d:%.2d | Total earnings: £%.2f\n", hours, minutes,
+           total_earnings);
   } else {
     printf("No activities logged yet.\n");
   }
